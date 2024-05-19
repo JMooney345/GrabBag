@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Suggestion</title>
+</head>
+<body>
+    <h1>Task Suggestion</h1>
+    <label for="tags">Enter Tags (comma-separated):</label>
+    <input type="text" id="tags" name="tags">
+    <button id="suggestButton" onclick="getSuggestions()" disabled>Get Suggestions</button>
+    <div id="suggestions"></div>
+    <div id="chosenOption"></div>
+
+    <script>
+        const NUMBER_OF_SUGGESTIONS = 3;
+        const POMOFOCUS_URL = "https://www.pomofocus.io";
+
+        let optionsFile;
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            fetch('options.json')
+                .then(response => response.json())
+                .then(data => {
+                    optionsFile = data;
+                    document.getElementById('suggestButton').disabled = false;
+                })
+                .catch(error => console.error('Error loading options file:', error));
+        });
+
+        function tokenizeTags(lineOfTags) {
+            return lineOfTags.split(',').map(tag => tag.trim());
+        }
+
+        function filterOptionsByTags(map, tags) {
+            const filteredOptions = [];
+            for (const [key, value] of Object.entries(map)) {
+                const optionTags = tokenizeTags(value);
+                if (tags.some(tag => optionTags.includes(tag))) {
+                    filteredOptions.push(key);
+                }
+            }
+            return filteredOptions;
+        }
+
+        function getSuggestions() {
+            if (!optionsFile) {
+                alert('Options file not loaded yet. Please try again.');
+                return;
+            }
+
+            const inputtedTags = document.getElementById('tags').value;
+            const tags = tokenizeTags(inputtedTags);
+            const options = filterOptionsByTags(optionsFile, tags);
+
+            if (options.length === 0) {
+                document.getElementById('suggestions').innerHTML = "No options available.";
+                return;
+            }
+
+            const suggestions = [];
+            while (suggestions.length < NUMBER_OF_SUGGESTIONS && suggestions.length < options.length) {
+                const option = options[Math.floor(Math.random() * options.length)];
+                if (!suggestions.includes(option)) {
+                    suggestions.push(option);
+                }
+            }
+
+            displaySuggestions(suggestions);
+        }
+
+        function displaySuggestions(suggestions) {
+            const suggestionsDiv = document.getElementById('suggestions');
+            suggestionsDiv.innerHTML = "<h2>Suggestions:</h2>";
+            suggestions.forEach((suggestion, index) => {
+                const button = document.createElement("button");
+                button.innerText = `${index + 1}: ${suggestion}`;
+                button.onclick = () => chooseOption(suggestion);
+                suggestionsDiv.appendChild(button);
+                suggestionsDiv.appendChild(document.createElement("br"));
+            });
+        }
+
+        function chooseOption(option) {
+            document.getElementById('chosenOption').innerHTML = `You chose: ${option}`;
+            setTimeout(() => {
+                window.open(POMOFOCUS_URL, "_blank");
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
