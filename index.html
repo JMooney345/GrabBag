@@ -20,20 +20,19 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             text-align: center;
+            width: 80%;
+            max-width: 600px;
         }
         h1 {
             color: #333;
         }
-        label {
-            font-size: 1.2em;
-            color: #555;
-        }
-        input[type="text"] {
-            width: 80%;
-            padding: 10px;
+        .tags-container {
+            text-align: left;
             margin: 20px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+        }
+        .tag {
+            display: block;
+            margin: 5px 0;
         }
         button {
             padding: 10px 20px;
@@ -72,8 +71,7 @@
 <body>
     <div class="container">
         <h1>Task Suggestion</h1>
-        <label for="tags">Enter Tags (comma-separated):</label>
-        <input type="text" id="tags" name="tags">
+        <div id="tagsContainer" class="tags-container"></div>
         <button id="suggestButton" onclick="getSuggestions()" disabled>Get Suggestions</button>
         <div id="suggestions"></div>
         <div id="chosenOption"></div>
@@ -84,16 +82,39 @@
         const POMOFOCUS_URL = "https://www.pomofocus.io";
 
         let optionsFile;
+        let allTags = new Set();
 
         document.addEventListener('DOMContentLoaded', (event) => {
             fetch('options.json')
                 .then(response => response.json())
                 .then(data => {
                     optionsFile = data;
+                    extractTags();
+                    renderTags();
                     document.getElementById('suggestButton').disabled = false;
                 })
                 .catch(error => console.error('Error loading options file:', error));
         });
+
+        function extractTags() {
+            for (const value of Object.values(optionsFile)) {
+                tokenizeTags(value).forEach(tag => allTags.add(tag));
+            }
+        }
+
+        function renderTags() {
+            const tagsContainer = document.getElementById('tagsContainer');
+            allTags.forEach(tag => {
+                const label = document.createElement('label');
+                label.className = 'tag';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = tag;
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(tag));
+                tagsContainer.appendChild(label);
+            });
+        }
 
         function tokenizeTags(lineOfTags) {
             return lineOfTags.split(',').map(tag => tag.trim().toLowerCase());
@@ -116,9 +137,8 @@
                 return;
             }
 
-            const inputtedTags = document.getElementById('tags').value;
-            const tags = tokenizeTags(inputtedTags);
-            const options = filterOptionsByTags(optionsFile, tags);
+            const selectedTags = Array.from(document.querySelectorAll('#tagsContainer input:checked')).map(input => input.value);
+            const options = filterOptionsByTags(optionsFile, selectedTags);
 
             if (options.length === 0) {
                 document.getElementById('suggestions').innerHTML = "No options available.";
