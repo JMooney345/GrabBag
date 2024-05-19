@@ -31,8 +31,16 @@
             margin: 20px 0;
         }
         .tag {
-            display: block;
-            margin: 5px 0;
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 20px;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+        .tag.selected {
+            background-color: #28a745;
         }
         button {
             padding: 10px 20px;
@@ -82,7 +90,7 @@
         const POMOFOCUS_URL = "https://www.pomofocus.io";
 
         let optionsFile;
-        let allTags = new Set();
+        let selectedTags = new Set();
 
         document.addEventListener('DOMContentLoaded', (event) => {
             fetch('options.json')
@@ -98,26 +106,33 @@
 
         function extractTags() {
             for (const value of Object.values(optionsFile)) {
-                tokenizeTags(value).forEach(tag => allTags.add(tag));
+                tokenizeTags(value).forEach(tag => selectedTags.add(tag));
             }
         }
 
         function renderTags() {
             const tagsContainer = document.getElementById('tagsContainer');
-            allTags.forEach(tag => {
-                const label = document.createElement('label');
-                label.className = 'tag';
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.value = tag;
-                label.appendChild(checkbox);
-                label.appendChild(document.createTextNode(tag));
-                tagsContainer.appendChild(label);
+            selectedTags.forEach(tag => {
+                const tagElement = document.createElement('div');
+                tagElement.className = 'tag';
+                tagElement.innerText = tag;
+                tagElement.onclick = () => toggleTag(tag, tagElement);
+                tagsContainer.appendChild(tagElement);
             });
         }
 
         function tokenizeTags(lineOfTags) {
             return lineOfTags.split(',').map(tag => tag.trim().toLowerCase());
+        }
+
+        function toggleTag(tag, tagElement) {
+            if (selectedTags.has(tag)) {
+                selectedTags.delete(tag);
+                tagElement.classList.remove('selected');
+            } else {
+                selectedTags.add(tag);
+                tagElement.classList.add('selected');
+            }
         }
 
         function filterOptionsByTags(map, tags) {
@@ -137,8 +152,7 @@
                 return;
             }
 
-            const selectedTags = Array.from(document.querySelectorAll('#tagsContainer input:checked')).map(input => input.value);
-            const options = filterOptionsByTags(optionsFile, selectedTags);
+            const options = filterOptionsByTags(optionsFile, Array.from(selectedTags));
 
             if (options.length === 0) {
                 document.getElementById('suggestions').innerHTML = "No options available.";
