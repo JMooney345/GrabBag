@@ -29,7 +29,7 @@
         });
 
         function tokenizeTags(lineOfTags) {
-            return lineOfTags.split(',').map(tag => tag.trim());
+            return lineOfTags.split(',').map(tag => tag.trim().toLowerCase());
         }
 
         function filterOptionsByTags(map, tags) {
